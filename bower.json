@@ -1,0 +1,8 @@
+{
+  "name": "cinemetrics",
+  "private": true,
+  "dependencies": {
+    "d3": "~3.4.3"
+  },
+  "devDependencies": {}
+}
