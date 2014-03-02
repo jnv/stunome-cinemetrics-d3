@@ -17,7 +17,7 @@ d3.svg.trapezoid = function(arc)
 
   var line = d3.svg.line();
 
-  function trapezoid(d)
+  function vertices(d)
   {
     var r0 = innerRadius.apply(this, arguments),
         r1 = outerRadius.apply(this, arguments),
@@ -25,14 +25,34 @@ d3.svg.trapezoid = function(arc)
         a1 = endAngle.apply(this, arguments) + ARC_OFFSET,
       // da = (a1 < a0 && (da = a0, a0 = a1, a1 = da), a1 - a0),
       // df = da < Math.PI ? '0' : '1',
-      c0 = Math.cos(a0),
-      s0 = Math.sin(a0),
-      c1 = Math.cos(a1),
-      s1 = Math.sin(a1);
+        c0 = Math.cos(a0),
+        s0 = Math.sin(a0),
+        c1 = Math.cos(a1),
+        s1 = Math.sin(a1);
 
-    var points = [ [r1 * c0, r1 * s0], [r1 * c1, r1 * s1], [r0 * c1, r0 * s1], [r0 * c0, r0 * s0]];
+    return [ [r1 * c0, r1 * s0], [r1 * c1, r1 * s1], [r0 * c1, r0 * s1], [r0 * c0, r0 * s0]];
+  }
+
+  function trapezoid(d)
+  {
+    var points = vertices(d);
+    // console.log(points);
     return line(points);
   }
+
+  trapezoid.axis = function(d) {
+    var p = vertices(d),
+        r0 = innerRadius.apply(this, arguments);
+
+    var x1 = (p[0][0] + p[1][0]) / 2,
+        y1 = (p[0][1] + p[1][1]) / 2;
+
+    var x2 = (p[2][0] + p[3][0]) / 2,
+        y2 = (p[2][1] + p[3][1]) / 2;
+
+    return [ [x1, y1], [x2, y2] ];
+  };
+
   return trapezoid;
 };
 
@@ -79,11 +99,11 @@ var colorGenerator = function(inChapters) {
 var movieChart = function(data)
 {
   //Width and height
-  var w = 300;
-  var h = 300;
+  var w = 600;
+  var h = 600;
   var dataset = data.durations;
-  var outerRadius = w / 2;
-  var innerRadius = w / 4;
+  var outerRadius = w / 3;
+  var innerRadius = w / 6;
   var END_ANGLE = 1.8; // of 2Pi
 
   var arc = d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius);
@@ -104,18 +124,22 @@ var movieChart = function(data)
   var svgDefs = svg.append('svg:defs');
   var colorDefs = color.colorDefs();
 
+  // TODO: this should be totally reimplemented with data bindings
   for (var i = 0; i < colorDefs.length; i++) {
     // One gradient per chapter
     var chapter = colorDefs[i];
     var segment = dataPie[i];
 
-    var rot = ((segment.startAngle + segment.endAngle) / 2) + ARC_OFFSET;
-    console.log(trapezoid(segment));
+    var axis = trapezoid.axis(segment);
 
     var chapterDef = svgDefs.append('svg:linearGradient')
         .attr('id', chapterColorRef(i))
-        .attr('gradientUnits', 'objectBoundingBox')
-        .attr('gradientTransform', 'rotate('+ toDeg(rot) + ')');
+        .attr('gradientUnits', 'userSpaceOnUse')
+        .attr('x1', axis[0][0])
+        .attr('y1', axis[0][1])
+        .attr('x2', axis[1][0])
+        .attr('y2', axis[1][1]);
+        // .attr('gradientTransform', 'rotate('+ toDeg(rot) + ')');
 
 
     var totalOffset = 0;
@@ -138,19 +162,21 @@ var movieChart = function(data)
   }
 
   //Set up groups
-  var arcs = svg.selectAll('g.arc')
+  var segmentGroups = svg.selectAll('g.segment')
     .data(dataPie)
     .enter()
     .append('g')
-    .attr('class', 'arc')
+    .attr('class', 'segment')
     .attr('transform', 'translate(' + outerRadius + ',' + outerRadius + ')');
 
-  //Draw arc paths
-  arcs.append('path').attr('fill', function(d, i)
+  // paths
+  var segments = segmentGroups.append('path').attr('fill', function(d, i)
   {
     //return color(i);
     return 'url(#' + chapterColorRef(i) + ')';
   }).attr('d', trapezoid);
+
+
   //Labels
   // arcs.append('text').attr('transform', function(d)
   // {
