@@ -52,6 +52,18 @@ d3.svg.trapezoid = function(arc)
 
     return [ [x1, y1], [x2, y2] ];
   };
+  
+  trapezoid.translate = function(d, volume) {
+    var a0 = startAngle.apply(this, arguments) + ARC_OFFSET,
+        a1 = endAngle.apply(this, arguments) + ARC_OFFSET;
+    var middle = (a0 + a1) / 2;
+    var sx = Math.cos(middle),
+        sy = Math.sin(middle);
+    
+    var v = volume;
+    
+    return [sx * v, sy * v];
+  };
 
   return trapezoid;
 };
@@ -99,13 +111,17 @@ var colorGenerator = function(inChapters) {
 var movieChart = function(data)
 {
   //Width and height
-  var w = 600;
-  var h = 600;
+  var w = 400;
+  var h = 400;
   var dataset = data.durations;
-  var outerRadius = w / 3;
-  var innerRadius = w / 6;
+  var motions = data.motions;
+  
+  var rratio = 0.35;
+  var outerRadius = w * rratio;
+  var innerRadius = w * rratio / 2;
   var END_ANGLE = 1.8; // of 2Pi
 
+  var motionmax = d3.max(motions);
   var arc = d3.svg.arc().innerRadius(innerRadius).outerRadius(outerRadius);
   var trapezoid = d3.svg.trapezoid(arc);
   var pie = d3.layout.pie().endAngle(Math.PI * END_ANGLE).sort(null);
@@ -167,14 +183,34 @@ var movieChart = function(data)
     .enter()
     .append('g')
     .attr('class', 'segment')
-    .attr('transform', 'translate(' + outerRadius + ',' + outerRadius + ')');
+    .attr('transform', 'translate(' + outerRadius/rratio/2 + ',' + outerRadius/rratio/2 + ')');
 
   // paths
   var segments = segmentGroups.append('path').attr('fill', function(d, i)
   {
     //return color(i);
     return 'url(#' + chapterColorRef(i) + ')';
-  }).attr('d', trapezoid);
+  }).attr('d', trapezoid)
+    .transition()
+      //.delay(function(d) { return d * 40; })
+      .each(slide);
+  
+  function slide(d, i) {
+    var m = motions[i],
+        segment = d3.select(this);
+    
+    var tr = trapezoid.translate(d, m * innerRadius *3);
+    
+    (function repeat() {
+      segment = segment.transition()
+          .ease('sin')
+          .duration(m*10000)
+          .attr('transform', 'translate(' + tr[0] + ',' + tr[1] + ')')
+        .transition()
+          .attr('transform', 'translate(0,0)')
+          .each('end', repeat);
+    })();
+  }
 
 
   //Labels
