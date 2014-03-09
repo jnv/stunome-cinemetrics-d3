@@ -19,8 +19,8 @@ d3.svg.trapezoid = function(arc)
 
   function vertices(d)
   {
-    var r0 = innerRadius.apply(this, arguments),
-        r1 = outerRadius.apply(this, arguments),
+    var r0 = d.innerRadius,
+        r1 = d.outerRadius,
         a0 = startAngle.apply(this, arguments) + ARC_OFFSET,
         a1 = endAngle.apply(this, arguments) + ARC_OFFSET,
       // da = (a1 < a0 && (da = a0, a0 = a1, a1 = da), a1 - a0),
@@ -52,16 +52,16 @@ d3.svg.trapezoid = function(arc)
 
     return [ [x1, y1], [x2, y2] ];
   };
-  
+
   trapezoid.translate = function(d, volume) {
     var a0 = startAngle.apply(this, arguments) + ARC_OFFSET,
         a1 = endAngle.apply(this, arguments) + ARC_OFFSET;
     var middle = (a0 + a1) / 2;
     var sx = Math.cos(middle),
         sy = Math.sin(middle);
-    
+
     var v = volume;
-    
+
     return [sx * v, sy * v];
   };
 
@@ -115,7 +115,7 @@ var movieChart = function(data)
   var h = 400;
   var dataset = data.durations;
   var motions = data.motions;
-  
+
   var rratio = 0.35;
   var outerRadius = w * rratio;
   var innerRadius = w * rratio / 2;
@@ -177,13 +177,15 @@ var movieChart = function(data)
     }
   }
 
+  var topGroup = svg.append('g')
+      .attr('transform', 'translate('+ w/2 + ',' + h/2 +')');
+
   //Set up groups
-  var segmentGroups = svg.selectAll('g.segment')
+  var segmentGroups = topGroup.selectAll('g.segment')
     .data(dataPie)
     .enter()
     .append('g')
-    .attr('class', 'segment')
-    .attr('transform', 'translate(' + outerRadius/rratio/2 + ',' + outerRadius/rratio/2 + ')');
+    .attr('class', 'segment');
 
   // paths
   var segments = segmentGroups.append('path').attr('fill', function(d, i)
@@ -194,33 +196,49 @@ var movieChart = function(data)
     .transition()
       //.delay(function(d) { return d * 40; })
       .each(slide);
-  
+
   function slide(d, i) {
     var m = motions[i],
         segment = d3.select(this);
-    
+
     var tr = trapezoid.translate(d, m * innerRadius *3);
-    
+
+
     (function repeat() {
-      segment = segment.transition()
+      segment.transition()
           .ease('sin')
           .duration(m*10000)
-          .attr('transform', 'translate(' + tr[0] + ',' + tr[1] + ')')
+          .attrTween('d', tweenTrapezoid(function(d, i) {
+            return {
+              innerRadius: (innerRadius + outerRadius) / 2,
+              outerRadius: (innerRadius + outerRadius)
+            };
+          }))
         .transition()
-          .attr('transform', 'translate(0,0)')
+          .attrTween('d', tweenTrapezoid(function(d, i) {
+            return {
+              innerRadius: innerRadius,
+              outerRadius: outerRadius
+            };
+          }))
           .each('end', repeat);
     })();
   }
 
 
-  //Labels
-  // arcs.append('text').attr('transform', function(d)
-  // {
-  //   return 'translate(' + arc.centroid(d) + ')';
-  // }).attr('text-anchor', 'middle').text(function(d)
-  // {
-  //   return d.value;
-  // });
+  function tweenTrapezoid(b) {
+    return function(a, i) {
+      var d = b.call(this, a, i),
+          i = d3.interpolate(a, d);
+      for (var k in d) {
+        a[k] = d[k]; // update received data
+      }
+      return function(t) {
+        return trapezoid(i(t));
+      };
+    };
+  }
+
 
   return container;
 };
