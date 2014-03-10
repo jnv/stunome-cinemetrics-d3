@@ -39,18 +39,50 @@
       var points = vertices(d);
       return line(points);
     };
+    
+    var centerPoint = function(a, b, edge) {
+      var c = (a + b) / 2;
+      
+      return c / edge;
+      
+      console.log(a, b);
+      
+      
+      //var max = Math.max(a, b);
+      
+      var d = Math.abs(a - edge);
+      var p = (c - a) / d;
+      
+      console.log(p);
+      return p;
+    };
+    
+    //var pointRatio = function()
 
     trapezoid.axis = function(d)
     {
       var p = vertices(d);
 
-      var x1 = (p[0][0] + p[1][0]) / 2,
+      /*var x1 = (p[0][0] + p[1][0]) / 2,
         y1 = (p[0][1] + p[1][1]) / 2;
 
       var x2 = (p[2][0] + p[3][0]) / 2,
-        y2 = (p[2][1] + p[3][1]) / 2;
+        y2 = (p[2][1] + p[3][1]) / 2;*/
+        
+       var x1 = centerPoint(p[0][0], p[1][0]),
+           y1 = centerPoint(p[0][1], p[1][1]);
+       var x2 = centerPoint(p[2][0], p[3][0]),
+           y2 = centerPoint(p[2][1], p[3][1]);
+           
+           
+       
+       
 
-      return [[x1, y1], [x2, y2]];
+      //return [[x1 - p[0][0], y1 - p[0][1]],
+      //        [x2 - p[0][1], y2 - p[2][1]]];
+      return [
+        [x1, y1], [x2, y2]
+      ];
     };
 
     trapezoid.innerRadius = function(v) {
@@ -201,16 +233,19 @@ var movieChart = function(data, options)
     // One gradient per chapter
     var chapter = colorDefs[i];
     var segment = dataPie[i];
+    
+    var angle = (segment.startAngle - segment.endAngle) / 2 - (Math.PI / 2);
 
     var axis = trapezoid.axis(segment);
     var chapterDef = svgDefs.append('svg:linearGradient')
       .attr('id', chapterColorRef(i))
-      .attr('gradientUnits', 'userSpaceOnUse')
+      //.attr('gradientUnits', 'userSpaceOnUse')
       .attr('x1', axis[0][0])
       .attr('y1', axis[0][1])
       .attr('x2', axis[1][0])
       .attr('y2', axis[1][1]);
-    // .attr('gradientTransform', 'rotate('+ toDeg(rot) + ')');
+      
+      //.attr('gradientTransform', 'rotate('+toDeg(angle)+')');
 
 
     var totalOffset = 0;
