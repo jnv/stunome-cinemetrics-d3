@@ -277,20 +277,21 @@ var movieChart = function(data)
     var m = motions[i],
       segment = d3.select(this);
 
-    var motionBase = m * outerRadius;
+    var trBase = m * outerRadius,
+        duration = clamp(2000 - m * 10000, 500, 2000);
 
-    console.log(outerRadius, m * 10);
+    console.log(duration);
 
     (function repeat()
     {
       segment.transition()
         .ease('linear')
-        .duration(m * 7000)
+        .duration(duration)
         .attrTween('d', tweenTrapezoid(function(d, i)
         {
           return {
             innerRadius: innerRadius,
-            outerRadius: outerRadius + motionBase
+            outerRadius: outerRadius + trBase
           };
         }))
         .transition()
@@ -298,7 +299,7 @@ var movieChart = function(data)
         {
           return {
 
-            innerRadius: innerRadius - motionBase,
+            innerRadius: innerRadius - trBase,
             outerRadius: outerRadius
           };
         }))
