@@ -128,6 +128,10 @@ function toDeg(radians)
   return radians * (180 / Math.PI);
 }
 
+function clamp(a,b,c) {
+  return Math.max(b,Math.min(c,a));
+}
+
 var chapterColorRef = function(i)
 {
   return 'chapterColor' + i;
@@ -171,6 +175,12 @@ var colorGenerator = function(inChapters)
   };
 };
 
+var preferredValue = function(pref, key) {
+  return function(d) {
+    return d[key] || pref;
+  };
+};
+
 var movieChart = function(data)
 {
   //Width and height
@@ -179,12 +189,14 @@ var movieChart = function(data)
   var dataset = data.durations;
   var motions = data.motions;
 
-  var outerRadius = Math.min(w, h) * .3 - 10;
-  var innerRadius = outerRadius * .6;
+  var outerRadius = Math.min(w, h) * .4;
+  var innerRadius = outerRadius * .5;
   var END_ANGLE = 1.8; // of 2Pi
 
   var motionmax = d3.max(motions);
-  var trapezoid = d3.svg.trapezoid();
+  var trapezoid = d3.svg.trapezoid()
+                  .innerRadius(preferredValue(innerRadius, 'innerRadius'))
+                  .outerRadius(preferredValue(outerRadius, 'outerRadius'));
   var pie = d3.layout.pie().endAngle(Math.PI * END_ANGLE).sort(null);
 
   var dataPie = pie(dataset);
@@ -265,26 +277,28 @@ var movieChart = function(data)
     var m = motions[i],
       segment = d3.select(this);
 
-    var tr = trapezoid.translate(d, m * innerRadius * 3);
+    var motionBase = m * outerRadius;
 
+    console.log(outerRadius, m * 10);
 
     (function repeat()
     {
       segment.transition()
-        .ease('sin')
-        .duration(m * 10000)
+        .ease('linear')
+        .duration(m * 7000)
         .attrTween('d', tweenTrapezoid(function(d, i)
         {
           return {
-            innerRadius: (innerRadius + outerRadius) / 2,
-            outerRadius: (innerRadius + outerRadius)
+            innerRadius: innerRadius,
+            outerRadius: outerRadius + motionBase
           };
         }))
         .transition()
         .attrTween('d', tweenTrapezoid(function(d, i)
         {
           return {
-            innerRadius: innerRadius,
+
+            innerRadius: innerRadius - motionBase,
             outerRadius: outerRadius
           };
         }))
