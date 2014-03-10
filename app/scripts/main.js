@@ -20,33 +20,29 @@
 
     var line = d3.svg.line();
 
-    function vertices(d)
+    var vertices = function(d)
     {
       var r0 = innerRadius.apply(this, arguments),
         r1 = outerRadius.apply(this, arguments),
         a0 = startAngle.apply(this, arguments) + ARC_OFFSET,
         a1 = endAngle.apply(this, arguments) + ARC_OFFSET,
-        // da = (a1 < a0 && (da = a0, a0 = a1, a1 = da), a1 - a0),
-        // df = da < Math.PI ? '0' : '1',
         c0 = Math.cos(a0),
         s0 = Math.sin(a0),
         c1 = Math.cos(a1),
         s1 = Math.sin(a1);
 
       return [[r1 * c0, r1 * s0], [r1 * c1, r1 * s1], [r0 * c1, r0 * s1], [r0 * c0, r0 * s0]];
-    }
+    };
 
-    function trapezoid(d)
+    var trapezoid = function(d)
     {
       var points = vertices(d);
-      // console.log(points);
       return line(points);
-    }
+    };
 
     trapezoid.axis = function(d)
     {
-      var p = vertices(d),
-        r0 = innerRadius.apply(this, arguments);
+      var p = vertices(d);
 
       var x1 = (p[0][0] + p[1][0]) / 2,
         y1 = (p[0][1] + p[1][1]) / 2;
@@ -55,19 +51,6 @@
         y2 = (p[2][1] + p[3][1]) / 2;
 
       return [[x1, y1], [x2, y2]];
-    };
-
-    trapezoid.translate = function(d, volume)
-    {
-      var a0 = startAngle.apply(this, arguments) + ARC_OFFSET,
-        a1 = endAngle.apply(this, arguments) + ARC_OFFSET;
-      var middle = (a0 + a1) / 2;
-      var sx = Math.cos(middle),
-        sy = Math.sin(middle);
-
-      var v = volume;
-
-      return [sx * v, sy * v];
     };
 
     trapezoid.innerRadius = function(v) {
@@ -141,13 +124,12 @@ var colorGenerator = function(inChapters)
 {
   var chapters = inChapters;
 
-  function toRgb(colorSet)
+  var toRgb = function(colorSet)
   {
     return 'rgb(' + colorSet[0] + ',' + colorSet[1] + ',' + colorSet[2] + ')';
-  }
+  };
 
-
-  function colorDefs()
+  var colorDefs = function()
   {
 
     var totalFrames = function(previousVal, colorSet)
@@ -168,7 +150,7 @@ var colorGenerator = function(inChapters)
       var total = chapterColors.reduce(totalFrames, 0);
       return chapterColors.map(zipColors(total));
     });
-  }
+  };
 
   return {
     colorDefs: colorDefs
@@ -181,11 +163,11 @@ var preferredValue = function(pref, key) {
   };
 };
 
-var movieChart = function(data)
+var movieChart = function(data, options)
 {
   //Width and height
-  var w = 400;
-  var h = 400;
+  var w = options.w || 400;
+  var h = options.h || 400;
   var dataset = data.durations;
   var motions = data.motions;
 
@@ -221,7 +203,6 @@ var movieChart = function(data)
     var segment = dataPie[i];
 
     var axis = trapezoid.axis(segment);
-
     var chapterDef = svgDefs.append('svg:linearGradient')
       .attr('id', chapterColorRef(i))
       .attr('gradientUnits', 'userSpaceOnUse')
@@ -280,8 +261,6 @@ var movieChart = function(data)
     var trBase = m * outerRadius,
         duration = clamp(2000 - m * 10000, 500, 2000);
 
-    console.log(duration);
-
     (function repeat()
     {
       segment.transition()
@@ -331,9 +310,12 @@ var movieChart = function(data)
 
 var loadChart = function(targetSel)
 {
-  var target = document.querySelector(targetSel);
-  target.innerHtml = '';
-  var dataSrc = target.getAttribute('data-src');
+  var target = d3.select(targetSel);
+
+  target.html('');
+  var dataSrc = target.attr('data-src'),
+      w = target.attr('data-w'),
+      h = target.attr('data-h');
   d3.json(dataSrc, function(error, json)
   {
     if (error)
@@ -342,9 +324,9 @@ var loadChart = function(targetSel)
       return console.warn(error);
     }
 
-    var chart = movieChart(json);
-    target.appendChild(chart);
+    var chart = movieChart(json, {w: w, h: h});
+    target[0][0].appendChild(chart); //d3 plz
   });
 };
 
-loadChart('#serenity-chart');
+loadChart('[data-cinemetrics]');
