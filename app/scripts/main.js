@@ -326,7 +326,7 @@ var movieChart = function(data, options)
   }).attr('d', trapezoid)
     .transition()
   //.delay(function(d) { return d * 40; })
-  .each(slide);
+     .each(slide);
 
   function slide(d, i)
   {
@@ -357,7 +357,7 @@ var movieChart = function(data, options)
             outerRadius: outerRadius
           };
         }))
-        // .each('end', repeat);
+        .each('end', repeat);
     })();
   }
 
