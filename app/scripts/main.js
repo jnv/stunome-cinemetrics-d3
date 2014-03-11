@@ -40,81 +40,17 @@
       return line(points);
     };
 
-    var centerPoint = function(a, b, edge) {
-      var c = (a + b) / 2;
-      var d = Math.abs(a - edge);
-      // console.log(c, a+edge);
-
-      return (c - a) / d;
-
-
-
-      //var max = Math.max(a, b);
-
-      // var d = Math.abs(a - edge);
-      // var p = (c - a) / d;
-
-      // console.log(p);
-      // return p;
-    };
-
-    var centerPoints = function() {
-
-      var abs = Array.prototype.slice.call(arguments); // [].map.call(arguments, Math.abs);
-
-      console.log('->', abs);
-
-      // Identify bounding box edges
-      var lmin = Math.min.apply(this, abs),
-          rmax = Math.max.apply(this, abs);
-      // absolute length of the bounding box
-      var length = rmax - lmin;
-
-
-
-      var a = abs[0],
-          b = abs[1],
-          c = abs[2],
-          d = abs[3];
-
-      // Calculate middle points of edges
-      var m1 = (a + b) / 2,
-          m2 = (c + d) / 2;
-
-      console.log('m1', m1);
-
-      var x1 = Math.abs(m1 - lmin) / length,
-          x2 = Math.abs(m2 - lmin) / length;
-      console.log(x1, x2);
-      return [x1, x2];
-
-    };
-
     trapezoid.axis = function(data)
     {
       var p = vertices(data);
 
-      /*var x1 = (p[0][0] + p[1][0]) / 2,
-        y1 = (p[0][1] + p[1][1]) / 2;
+      var x1 = (p[0][0] + p[1][0]) / 2,
+          y1 = (p[0][1] + p[1][1]) / 2;
 
       var x2 = (p[2][0] + p[3][0]) / 2,
-        y2 = (p[2][1] + p[3][1]) / 2;*/
-      var getDimension = function(i) {
-        return function(arr) { return arr[i]; };
-      };
+          y2 = (p[2][1] + p[3][1]) / 2;
 
-      // Grab only X and Y dimensions from the points array
-      var xs = p.map(getDimension(0)),
-          ys = p.map(getDimension(1));
-
-      // Get relative middle points [x1, x2] and [y1, y2]
-      var cx = centerPoints.apply(this, xs),
-          cy = centerPoints.apply(this, ys);
-      // console.log(cx, cy);
-      return d3.zip(cx, cy);
-
-      //return [[x1 - p[0][0], y1 - p[0][1]],
-      //        [x2 - p[0][1], y2 - p[2][1]]];
+      return [[x1, y1], [x2, y2]];
     };
 
     trapezoid.relativeCentroid = function() {
@@ -273,19 +209,14 @@ var movieChart = function(data, options)
     var chapter = colorDefs[i];
     var segment = dataPie[i];
 
-    var angle = (segment.startAngle + segment.endAngle) / 2 + Math.PI / 2;
-    // console.log(trapezoid.relativeCentroid(segment));
     var axis = trapezoid.axis(segment);
-    // console.log(axis);
     var chapterDef = svgDefs.append('svg:linearGradient')
       .attr('id', chapterColorRef(i))
-      //.attr('gradientUnits', 'userSpaceOnUse')
+      .attr('gradientUnits', 'userSpaceOnUse')
       .attr('x1', axis[0][0])
       .attr('y1', axis[0][1])
       .attr('x2', axis[1][0])
       .attr('y2', axis[1][1]);
-
-      // .attr('gradientTransform', 'rotate('+ (toDeg(angle)) +' 0.5 0.5)');
 
 
     var totalOffset = 0;
@@ -298,7 +229,7 @@ var movieChart = function(data, options)
 
       chapterDef.append('svg:stop')
         .attr('stop-color', currentColor)
-        .attr('offset', totalOffset);
+        .attr('offset', totalOffset + 0.01); // allow a little offset to prevent aliasing
 
       totalOffset += currentRatio;
 
@@ -357,7 +288,7 @@ var movieChart = function(data, options)
             outerRadius: outerRadius
           };
         }))
-        // .each('end', repeat);
+        .each('end', repeat);
     })();
   }
 
