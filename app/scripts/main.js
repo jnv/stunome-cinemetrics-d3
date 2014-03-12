@@ -256,16 +256,16 @@ var movieChart = function(data, options)
     return 'url(#' + chapterColorRef(i) + ')';
   }).attr('d', trapezoid)
     .transition()
-  //.delay(function(d) { return d * 40; })
-  .each(slide);
+    // .delay(function(d, i) { return Math.random() * 10 * i; })
+    .each(slide);
 
   function slide(d, i)
   {
     var m = motions[i],
-      segment = d3.select(this);
+        segment = d3.select(this);
 
     var trBase = m * outerRadius,
-        duration = clamp(2000 - m * 10000, 500, 2000);
+        duration = clamp(2000 - m * 10000, 100, Infinity); // more motion = shorter duration
 
     (function repeat()
     {
@@ -290,7 +290,7 @@ var movieChart = function(data, options)
         }))
         .each('end', repeat);
     })();
-  }
+  };
 
 
   function tweenTrapezoid(b)
@@ -314,14 +314,14 @@ var movieChart = function(data, options)
   return container;
 };
 
-var loadChart = function(targetSel)
+var loadChart = function(target)
 {
-  var target = d3.select(targetSel);
+  var target = this;
 
-  target.html('');
-  var dataSrc = target.attr('data-src'),
-      w = target.attr('data-w'),
-      h = target.attr('data-h');
+  target.innerHtml = '';
+  var dataSrc = target.getAttribute('data-src'),
+      w = target.getAttribute('data-w'),
+      h = target.getAttribute('data-h');
   d3.json(dataSrc, function(error, json)
   {
     if (error)
@@ -331,8 +331,8 @@ var loadChart = function(targetSel)
     }
 
     var chart = movieChart(json, {w: w, h: h});
-    target[0][0].appendChild(chart); //d3 plz
+    target.appendChild(chart);
   });
 };
 
-loadChart('[data-cinemetrics]');
+d3.selectAll('[data-cinemetrics]').each(loadChart);
