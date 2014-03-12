@@ -122,9 +122,11 @@ function clamp(a,b,c) {
   return Math.max(b,Math.min(c,a));
 }
 
-var chapterColorRef = function(i)
+var chapterColorRef = function(id)
 {
-  return 'chapterColor' + i;
+  return function(i) {
+    return 'ch_' + id + i;
+  };
 };
 
 var colorGenerator = function(inChapters)
@@ -190,6 +192,8 @@ var movieChart = function(data, options)
 
   var dataPie = pie(dataset);
 
+  var chapterId = chapterColorRef(data.id);
+
   //Easy colors accessible via a 10-step ordinal scale
   // var color = d3.scale.category10();
   var color = colorGenerator(data.colors);
@@ -211,7 +215,7 @@ var movieChart = function(data, options)
 
     var axis = trapezoid.axis(segment);
     var chapterDef = svgDefs.append('svg:linearGradient')
-      .attr('id', chapterColorRef(i))
+      .attr('id', chapterId(i))
       .attr('gradientUnits', 'userSpaceOnUse')
       .attr('x1', axis[0][0])
       .attr('y1', axis[0][1])
@@ -253,7 +257,7 @@ var movieChart = function(data, options)
   var segments = segmentGroups.append('path').attr('fill', function(d, i)
   {
     //return color(i);
-    return 'url(#' + chapterColorRef(i) + ')';
+    return 'url(#' + chapterId(i) + ')';
   }).attr('d', trapezoid)
     .transition()
     // .delay(function(d, i) { return Math.random() * 10 * i; })
